@@ -6,3 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bitfield = { version="^0.13" }
+bitflags = { version="^1.2" }
+serde = { version = "^1.0", features = ["derive"] }
+serde-big-array = { version = "^0.4" }
+static_assertions = { version = "^1.1" }
+openssl = { version = "^0.10" }
+iocuddle = { version = "^0.1" }
+uuid = { version = "^1.2" }
