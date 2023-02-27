@@ -5,7 +5,9 @@ use crate::{
     util::hexdump,
 };
 
+#[cfg(feature = "use-serde")]
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "use-serde")]
 use serde_big_array::BigArray;
 
 use std::io::{Error, Result};
@@ -16,13 +18,15 @@ const SIG_PIECE_SIZE: usize = std::mem::size_of::<[u8; 72]>();
 const R_S_SIZE: usize = SIG_PIECE_SIZE * 2usize;
 
 #[repr(C)]
-#[derive(Copy, Clone, Deserialize, Serialize)]
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
+
 pub struct Signature {
-    #[serde(with = "BigArray")]
+    #[cfg_attr(feature = "use-serde", serde(with = "BigArray"))]
     r: [u8; 72],
-    #[serde(with = "BigArray")]
+    #[cfg_attr(feature = "use-serde", serde(with = "BigArray"))]
     s: [u8; 72],
-    #[serde(with = "BigArray")]
+    #[cfg_attr(feature = "use-serde", serde(with = "BigArray"))]
     _reserved: [u8; 512 - R_S_SIZE],
 }
 

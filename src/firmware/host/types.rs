@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use bitflags;
+#[cfg(feature = "use-serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{error::SnpCertError, firmware::linux::guest::types::_4K_PAGE};
@@ -24,7 +25,8 @@ bitflags::bitflags! {
 
 /// Information about the SEV platform version.
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
 pub struct Version {
     /// The major version number.
     pub major: u8,
@@ -33,7 +35,8 @@ pub struct Version {
     pub minor: u8,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
 #[repr(C)]
 /// Certificates which are accepted for [`CertTableEntry`](self::CertTableEntry)
 pub enum SnpCertType {
@@ -113,7 +116,8 @@ impl TryFrom<SnpCertType> for uuid::Uuid {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
 #[repr(C)]
 /// An entry with information regarding a specific certificate.
 pub struct CertTableEntry {
@@ -161,7 +165,8 @@ pub struct SnpTcbStatus {
 
 /// A description of the SEV-SNP platform's build information.
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
 pub struct SnpBuild {
     /// The version information.
     pub version: Version,

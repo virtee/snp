@@ -8,9 +8,12 @@ edition = "2021"
 [dependencies]
 bitfield = { version="^0.13" }
 bitflags = { version="^1.2" }
-serde = { version = "^1.0", features = ["derive"] }
-serde-big-array = { version = "^0.4" }
+serde = { version = "^1.0", features = ["derive"], optional = true}
+serde-big-array = { version = "^0.4", optional = true}
 static_assertions = { version = "^1.1" }
 openssl = { version = "^0.10" }
 iocuddle = { version = "^0.1" }
 uuid = { version = "^1.2" }
+
+[features]
+use-serde = [ "serde", "serde-big-array" ]
