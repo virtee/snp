@@ -22,7 +22,7 @@ impl From<*mut u8> for RawData {
     }
 }
 
-impl <const SIZE: usize> From<[u8; SIZE]> for RawData {
+impl<const SIZE: usize> From<[u8; SIZE]> for RawData {
     fn from(value: [u8; SIZE]) -> Self {
         Self::Vector(Vec::from(value))
     }
@@ -51,7 +51,6 @@ impl From<&mut Vec<u8>> for RawData {
         Self::Vector(value.to_vec())
     }
 }
-
 
 /// TcbVersion represents the version of the firmware.
 ///

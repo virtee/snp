@@ -6,6 +6,9 @@ pub use crate::firmware::linux::guest::types::{
     AttestationReport, SnpGuestPolicy, SnpPlatformInfo, SnpReportReq, SnpReportRsp, SnpTcbVersion,
 };
 
+pub(crate) use crate::firmware::linux::guest as GuestFFI;
+pub(crate) use crate::firmware::linux::host as HostFFI;
+
 #[derive(Copy, Clone, Debug)]
 /// Structure of required data for fetching the derived key.
 pub struct SnpDerivedKey {

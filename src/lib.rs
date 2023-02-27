@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+#![allow(dead_code)]
+
 //!
 //! Full explanation of how to use the crate will go here...
 //!

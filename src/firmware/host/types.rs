@@ -4,9 +4,9 @@ use bitflags;
 #[cfg(feature = "use-serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{error::SnpCertError, firmware::linux::guest::types::_4K_PAGE};
+pub(crate) use crate::{error::SnpCertError, firmware::linux::guest::types::_4K_PAGE};
 
-use crate::firmware::linux::host::types as FFI;
+pub(crate) use crate::firmware::linux::host as FFI;
 
 /// A representation of the type of data provided to [`parse_table`](crate::firmware::host::parse_table)
 pub use crate::firmware::linux::host::types::RawData;
@@ -283,10 +283,10 @@ impl SnpExtConfig {
     }
 }
 
-impl TryFrom<FFI::SnpGetExtConfig> for SnpExtConfig {
+impl TryFrom<FFI::types::SnpGetExtConfig> for SnpExtConfig {
     type Error = uuid::Error;
 
-    fn try_from(value: FFI::SnpGetExtConfig) -> Result<Self, Self::Error> {
+    fn try_from(value: FFI::types::SnpGetExtConfig) -> Result<Self, Self::Error> {
         let mut config: Option<SnpConfig> = None;
         let mut certs: Option<Vec<CertTableEntry>> = None;
         if let Some(config_ref) = unsafe { (value.config_address as *mut SnpConfig).as_mut() } {
@@ -294,9 +294,9 @@ impl TryFrom<FFI::SnpGetExtConfig> for SnpExtConfig {
         }
 
         if let Some(certificates) =
-            unsafe { (value.certs_address as *mut FFI::CertTableEntry).as_mut() }
+            unsafe { (value.certs_address as *mut FFI::types::CertTableEntry).as_mut() }
         {
-            certs = Some(unsafe { FFI::CertTableEntry::parse_table(certificates)? })
+            certs = Some(unsafe { FFI::types::CertTableEntry::parse_table(certificates)? })
         }
 
         Ok(Self {
@@ -307,10 +307,10 @@ impl TryFrom<FFI::SnpGetExtConfig> for SnpExtConfig {
     }
 }
 
-impl TryFrom<FFI::SnpSetExtConfig> for SnpExtConfig {
+impl TryFrom<FFI::types::SnpSetExtConfig> for SnpExtConfig {
     type Error = uuid::Error;
 
-    fn try_from(value: FFI::SnpSetExtConfig) -> Result<Self, Self::Error> {
+    fn try_from(value: FFI::types::SnpSetExtConfig) -> Result<Self, Self::Error> {
         let mut config: Option<SnpConfig> = None;
         let mut certs: Option<Vec<CertTableEntry>> = None;
         if let Some(config_ref) = unsafe { (value.config_address as *mut SnpConfig).as_mut() } {
@@ -318,9 +318,9 @@ impl TryFrom<FFI::SnpSetExtConfig> for SnpExtConfig {
         }
 
         if let Some(certificates) =
-            unsafe { (value.certs_address as *mut FFI::CertTableEntry).as_mut() }
+            unsafe { (value.certs_address as *mut FFI::types::CertTableEntry).as_mut() }
         {
-            certs = Some(unsafe { FFI::CertTableEntry::parse_table(certificates)? })
+            certs = Some(unsafe { FFI::types::CertTableEntry::parse_table(certificates)? })
         }
 
         Ok(Self {
@@ -367,8 +367,8 @@ impl SnpConfig {
     }
 }
 
-impl From<FFI::SnpConfig> for SnpConfig {
-    fn from(value: FFI::SnpConfig) -> Self {
+impl From<FFI::types::SnpConfig> for SnpConfig {
+    fn from(value: FFI::types::SnpConfig) -> Self {
         Self {
             reported_tcb: value.reported_tcb.into(),
             mask_chip_id: value.mask_chip_id,
@@ -410,8 +410,8 @@ impl TcbVersion {
     }
 }
 
-impl From<FFI::TcbVersion> for TcbVersion {
-    fn from(value: FFI::TcbVersion) -> Self {
+impl From<FFI::types::TcbVersion> for TcbVersion {
+    fn from(value: FFI::types::TcbVersion) -> Self {
         Self {
             bootloader: value.bootloader,
             tee: value.tee,

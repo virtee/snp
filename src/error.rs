@@ -59,7 +59,6 @@ impl From<u32> for VmmError {
 }
 
 impl From<u64> for VmmError {
-
     /// Takes a raw u64 and translates it into the correlated [`VmmError`]
     /// type.
     ///
