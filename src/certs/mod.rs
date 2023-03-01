@@ -13,6 +13,7 @@ pub(crate) trait AsLeBytes<T> {
     fn as_le_bytes(&self) -> T;
 }
 
+#[cfg(feature = "openssl")]
 impl FromLe for openssl::bn::BigNum {
     #[inline]
     fn from_le(value: &[u8]) -> Result<Self> {
@@ -22,6 +23,7 @@ impl FromLe for openssl::bn::BigNum {
     }
 }
 
+#[cfg(feature = "openssl")]
 impl AsLeBytes<[u8; 72]> for openssl::bn::BigNumRef {
     fn as_le_bytes(&self) -> [u8; 72] {
         let mut buf = [0u8; 72];
@@ -34,6 +36,7 @@ impl AsLeBytes<[u8; 72]> for openssl::bn::BigNumRef {
     }
 }
 
+#[cfg(feature = "openssl")]
 impl AsLeBytes<[u8; 512]> for openssl::bn::BigNumRef {
     fn as_le_bytes(&self) -> [u8; 512] {
         let mut buf = [0u8; 512];

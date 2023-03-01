@@ -26,7 +26,7 @@ bitflags::bitflags! {
 /// Information about the SEV platform version.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct Version {
     /// The major version number.
     pub major: u8,
@@ -36,7 +36,7 @@ pub struct Version {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[repr(C)]
 /// Certificates which are accepted for [`CertTableEntry`](self::CertTableEntry)
 pub enum SnpCertType {
@@ -96,7 +96,7 @@ impl TryFrom<&uuid::Uuid> for SnpCertType {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[repr(C)]
 /// An entry with information regarding a specific certificate.
 pub struct CertTableEntry {
@@ -146,7 +146,7 @@ pub struct SnpTcbStatus {
 /// A description of the SEV-SNP platform's build information.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct SnpBuild {
     /// The version information.
     pub version: Version,

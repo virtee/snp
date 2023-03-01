@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
+use crate::util::hexdump;
 
-use crate::{
-    certs::{AsLeBytes, FromLe},
-    util::hexdump,
-};
+#[cfg(feature = "openssl")]
+use crate::certs::{AsLeBytes, FromLe};
 
-#[cfg(feature = "use-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "use-serde")]
+#[cfg(feature = "serde-big-array")]
 use serde_big_array::BigArray;
 
+#[cfg(feature = "openssl")]
 use std::io::{Error, Result};
 
+#[cfg(feature = "openssl")]
 use openssl::{bn, ecdsa};
 
 const SIG_PIECE_SIZE: usize = std::mem::size_of::<[u8; 72]>();
@@ -19,14 +20,14 @@ const R_S_SIZE: usize = SIG_PIECE_SIZE * 2usize;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-#[cfg_attr(feature = "use-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 
 pub struct Signature {
-    #[cfg_attr(feature = "use-serde", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
     r: [u8; 72],
-    #[cfg_attr(feature = "use-serde", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
     s: [u8; 72],
-    #[cfg_attr(feature = "use-serde", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
     _reserved: [u8; 512 - R_S_SIZE],
 }
 
@@ -73,6 +74,7 @@ Signature:
     }
 }
 
+#[cfg(feature = "openssl")]
 impl From<ecdsa::EcdsaSig> for Signature {
     #[inline]
     fn from(value: ecdsa::EcdsaSig) -> Self {
@@ -84,6 +86,7 @@ impl From<ecdsa::EcdsaSig> for Signature {
     }
 }
 
+#[cfg(feature = "openssl")]
 impl TryFrom<&[u8]> for Signature {
     type Error = Error;
 
@@ -93,6 +96,7 @@ impl TryFrom<&[u8]> for Signature {
     }
 }
 
+#[cfg(feature = "openssl")]
 impl TryFrom<&Signature> for ecdsa::EcdsaSig {
     type Error = Error;
 
@@ -104,6 +108,7 @@ impl TryFrom<&Signature> for ecdsa::EcdsaSig {
     }
 }
 
+#[cfg(feature = "openssl")]
 impl TryFrom<&Signature> for Vec<u8> {
     type Error = Error;
 
