@@ -15,7 +15,7 @@ impl Display for VmplError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Invalid Virtual Machine Permisison Level (VMPL) specificed!"
+            "Invalid Virtual Machine Permisison Level (VMPL) specified!"
         )
     }
 }
