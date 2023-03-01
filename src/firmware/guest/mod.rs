@@ -51,12 +51,12 @@ impl Firmware {
     pub fn snp_get_report(
         &mut self,
         message_version: Option<u8>,
-        report_request: &mut SnpReportReq,
+        mut report_request: SnpReportReq,
     ) -> Result<AttestationReport, UserApiError> {
         let mut report_response: SnpReportRsp = Default::default();
 
         let mut request: SnpGuestRequest<SnpReportReq, SnpReportRsp> =
-            SnpGuestRequest::new(message_version, report_request, &mut report_response);
+            SnpGuestRequest::new(message_version, &mut report_request, &mut report_response);
 
         SNP_GET_REPORT.ioctl(&mut self.0, &mut request)?;
 
@@ -70,7 +70,7 @@ impl Firmware {
     pub fn snp_get_derived_key(
         &mut self,
         message_version: Option<u8>,
-        derived_key_request: &mut SnpDerivedKey,
+        derived_key_request: SnpDerivedKey,
     ) -> Result<[u8; 32], UserApiError> {
         let mut ffi_derived_key_request: SnpDerivedKeyReq = derived_key_request.into();
         let mut ffi_derived_key_response: SnpDerivedKeyRsp = Default::default();
@@ -93,7 +93,7 @@ impl Firmware {
     pub fn snp_get_ext_report(
         &mut self,
         message_version: Option<u8>,
-        report_request: &mut SnpReportReq,
+        mut report_request: SnpReportReq,
     ) -> Result<(AttestationReport, Vec<CertTableEntry>), UserApiError> {
         let mut report_response: SnpReportRsp = Default::default();
 
@@ -103,7 +103,7 @@ impl Firmware {
         // Due to the complex buffer allocation, we will take the SnpReportReq
         // provided by the caller, and create an extended report request object
         // for them.
-        let mut ext_report_request: SnpExtReportReq = SnpExtReportReq::new(report_request);
+        let mut ext_report_request: SnpExtReportReq = SnpExtReportReq::new(&mut report_request);
 
         // Construct the object needed to perform the IOCTL request.
         // *NOTE:* This is __important__ because a fw_err value which matches
