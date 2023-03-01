@@ -34,11 +34,11 @@ use GuestFFI::types::*;
 // }
 
 /// A handle to the SEV, SEV-ES, or SEV-SNP platform.
-struct Firmware(File);
+pub struct Firmware(File);
 
 impl Firmware {
     /// Generate a new file handle to the SEV guest platform.
-    fn open() -> std::io::Result<Firmware> {
+    pub fn open() -> std::io::Result<Firmware> {
         Ok(Firmware(
             OpenOptions::new()
                 .read(true)
@@ -48,7 +48,7 @@ impl Firmware {
     }
 
     /// Requests an attestation report from the AMD Secure Processor.
-    fn snp_get_report(
+    pub fn snp_get_report(
         &mut self,
         message_version: Option<u8>,
         report_request: &mut SnpReportReq,
@@ -67,7 +67,7 @@ impl Firmware {
     }
 
     /// Fetches a derived key from the AMD Secure Processor.
-    fn snp_get_derived_key(
+    pub fn snp_get_derived_key(
         &mut self,
         message_version: Option<u8>,
         derived_key_request: &mut SnpDerivedKey,
@@ -90,7 +90,7 @@ impl Firmware {
     }
 
     /// Request an extended attestation report from the AMD Secure Processor.
-    fn snp_get_ext_report(
+    pub fn snp_get_ext_report(
         &mut self,
         message_version: Option<u8>,
         report_request: &mut SnpReportReq,
