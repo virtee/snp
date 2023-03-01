@@ -8,6 +8,7 @@ use crate::{
 
 use uuid::Uuid;
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RawData {
     /// A mutable pointer to an unsigned byte.
     Pointer(*mut u8),
@@ -24,12 +25,12 @@ impl From<*mut u8> for RawData {
 
 impl<const SIZE: usize> From<[u8; SIZE]> for RawData {
     fn from(value: [u8; SIZE]) -> Self {
-        Self::Vector(Vec::from(value))
+        Self::Vector(value.into())
     }
 }
 
-impl From<&[u8]> for RawData {
-    fn from(value: &[u8]) -> Self {
+impl From<&mut [u8]> for RawData {
+    fn from(value: &mut [u8]) -> Self {
         Self::Vector(value.into())
     }
 }
@@ -55,6 +56,7 @@ impl From<&mut Vec<u8>> for RawData {
 /// TcbVersion represents the version of the firmware.
 ///
 /// (Chapter 2.2; Table 3)
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(C)]
 pub struct TcbVersion {
     /// Current bootloader version.
@@ -112,7 +114,7 @@ pub struct SnpConfig {
 /// };
 /// ```
 ///
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(C)]
 pub struct CertTableEntry {
     /// Sixteen character GUID.
@@ -247,10 +249,7 @@ impl CertTableEntry {
 
             // Build the Rust-friendly structure and append vector to be returned when
             // we are finished.
-            retval.push(UAPI::CertTableEntry::from_guid(
-                &guid.hyphenated().to_string(),
-                cert_bytes.clone(),
-            ));
+            retval.push(UAPI::CertTableEntry::from_guid(&guid, cert_bytes.clone())?);
 
             // Move the pointer ahead to the next value.
             data = data.offset(1isize);
@@ -346,4 +345,200 @@ pub struct SnpGetExtConfig {
 
     /// 4K-page aligned length of the buffer which will hold the fetched certificates.
     pub certs_len: u32,
+}
+
+#[cfg(test)]
+mod test {
+    mod raw_data {
+
+        use crate::firmware::linux::host::types::RawData;
+
+        #[test]
+        fn test_from_array() {
+            let expected: RawData = RawData::Vector(vec![1; 72]);
+
+            let actual: RawData = [1; 72].into();
+
+            assert_eq!(expected, actual);
+        }
+
+        #[test]
+        fn test_from_u8_slice() {
+            let mut value: [u8; 20] = [2; 20];
+            let value_slice: &mut [u8] = &mut value;
+            let expected: RawData = RawData::Vector(vec![2; 20]);
+            let actual: RawData = value_slice.into();
+            assert_eq!(expected, actual);
+        }
+
+        #[test]
+        fn test_from_u8_ptr() {
+            let mut value: [u8; 20] = [2; 20];
+            let value_ref: *mut u8 = value.as_mut_ptr();
+            let expected: RawData = RawData::Pointer(value_ref);
+            let actual: RawData = value_ref.into();
+            assert_eq!(expected, actual);
+        }
+
+        #[test]
+        fn test_from_u8_vec() {
+            let value: Vec<u8> = vec![2; 20];
+            let expected: RawData = RawData::Vector(vec![2; 20]);
+            let actual: RawData = value.into();
+            assert_eq!(expected, actual);
+        }
+
+        #[test]
+        fn test_from_u8_vec_ref() {
+            let value: Vec<u8> = vec![2; 20];
+            let actual: RawData = (&value).into();
+            let expected: RawData = RawData::Vector(value);
+            assert_eq!(expected, actual);
+        }
+
+        #[test]
+        fn test_from_u8_vec_mut_ref() {
+            let mut value: Vec<u8> = vec![2; 20];
+            let actual: RawData = (&mut value).into();
+            let expected: RawData = RawData::Vector(value);
+            assert_eq!(expected, actual);
+        }
+    }
+
+    mod tcb_version {
+        use crate::firmware::linux::host::types::TcbVersion;
+
+        #[test]
+        fn test_new() {
+            let expected: TcbVersion = TcbVersion {
+                bootloader: 2,
+                tee: 3,
+                reserved: [0; 4],
+                snp: 5,
+                microcode: 6,
+            };
+
+            let actual: TcbVersion = TcbVersion::new(2, 3, 5, 6);
+            assert_eq!(expected, actual);
+        }
+    }
+
+    mod cert_table_entry {
+
+        use crate::firmware::host::types as UAPI;
+        use crate::firmware::linux::host::types::CertTableEntry;
+        use uuid::Uuid;
+
+        fn build_vec_uapi_cert_table() -> Vec<UAPI::CertTableEntry> {
+            vec![
+                UAPI::CertTableEntry::new(UAPI::SnpCertType::ARK, vec![1; 25]),
+                UAPI::CertTableEntry::new(UAPI::SnpCertType::ASK, vec![2; 25]),
+                UAPI::CertTableEntry::new(UAPI::SnpCertType::VCEK, vec![5; 15]),
+                UAPI::CertTableEntry::new(
+                    UAPI::SnpCertType::OTHER(
+                        Uuid::parse_str("fbb6ed74-e73e-44ab-8893-4252792d737a").unwrap(),
+                    ),
+                    vec![7; 6],
+                ),
+            ]
+        }
+
+        #[test]
+        fn test_uapi_to_vec_bytes() {
+            let expected: Vec<u8> = vec![
+                192, 180, 6, 164, 168, 3, 73, 82, 151, 67, 63, 182, 1, 76, 208, 174, 120, 0, 0, 0,
+                25, 0, 0, 0, 74, 183, 179, 121, 187, 172, 79, 228, 160, 47, 5, 174, 243, 39, 199,
+                130, 145, 0, 0, 0, 25, 0, 0, 0, 99, 218, 117, 141, 230, 100, 69, 100, 173, 197,
+                244, 185, 59, 232, 172, 205, 170, 0, 0, 0, 15, 0, 0, 0, 251, 182, 237, 116, 231,
+                62, 68, 171, 136, 147, 66, 82, 121, 45, 115, 122, 185, 0, 0, 0, 6, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                5, 5, 5, 7, 7, 7, 7, 7, 7,
+            ];
+            let mut data: Vec<UAPI::CertTableEntry> = build_vec_uapi_cert_table();
+            let actual: Vec<u8> = CertTableEntry::uapi_to_vec_bytes(&mut data).unwrap();
+            assert_eq!(expected, actual);
+        }
+
+        #[test]
+        fn test_parse_table_regular() {
+            let mut cert_bytes: Vec<u8> = vec![
+                192, 180, 6, 164, 168, 3, 73, 82, 151, 67, 63, 182, 1, 76, 208, 174, 120, 0, 0, 0,
+                25, 0, 0, 0, 74, 183, 179, 121, 187, 172, 79, 228, 160, 47, 5, 174, 243, 39, 199,
+                130, 145, 0, 0, 0, 25, 0, 0, 0, 99, 218, 117, 141, 230, 100, 69, 100, 173, 197,
+                244, 185, 59, 232, 172, 205, 170, 0, 0, 0, 15, 0, 0, 0, 251, 182, 237, 116, 231,
+                62, 68, 171, 136, 147, 66, 82, 121, 45, 115, 122, 185, 0, 0, 0, 6, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                5, 5, 5, 7, 7, 7, 7, 7, 7,
+            ];
+
+            let cert_bytes_ptr: *mut CertTableEntry =
+                cert_bytes.as_mut_ptr() as *mut CertTableEntry;
+
+            let actual: Vec<UAPI::CertTableEntry> =
+                unsafe { CertTableEntry::parse_table(cert_bytes_ptr).unwrap() };
+
+            let expected: Vec<UAPI::CertTableEntry> = build_vec_uapi_cert_table();
+
+            assert_eq!(expected, actual);
+        }
+
+        #[test]
+        #[should_panic]
+        fn test_parse_table_offset_too_large() {
+            let mut cert_bytes: Vec<u8> = vec![
+                192, 180, 6, 164, 168, 3, 73, 82, 151, 67, 63, 182, 1, 76, 208, 174, 120, 0, 0, 0,
+                25, 0, 0, 0, 74, 183, 179, 121, 187, 172, 79, 228, 160, 47, 5, 174, 243, 39, 199,
+                130, 145, 0, 0, 0, 25, 0, 0, 0, 99, 218, 117, 141, 230, 100, 69, 100, 173, 197,
+                244, 185, 59, 232, 172, 205, 170, 0, 0, 0, 15, 0, 0, 0, 251, 182, 237, 116, 231,
+                62, 68, 171, 136, 147, 66, 82, 121, 45, 115, 122, 185, 0, 0, 0, 6, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                5, 5, 5, 7, 7, 7, 7, 7,
+            ];
+
+            let cert_bytes_ptr: *mut CertTableEntry =
+                cert_bytes.as_mut_ptr() as *mut CertTableEntry;
+
+            let actual: Vec<UAPI::CertTableEntry> =
+                unsafe { CertTableEntry::parse_table(cert_bytes_ptr).unwrap() };
+
+            let expected: Vec<UAPI::CertTableEntry> = build_vec_uapi_cert_table();
+
+            assert_eq!(expected, actual, "Certificate Bytes offset too large?");
+        }
+
+        #[test]
+        #[should_panic]
+        fn test_parse_table_offset_short() {
+            let mut cert_bytes: Vec<u8> = vec![
+                192, 180, 6, 164, 168, 3, 73, 82, 151, 67, 63, 182, 1, 76, 208, 174, 120, 0, 0, 0,
+                1, 0, 0, 0, 74, 183, 179, 121, 187, 172, 79, 228, 160, 47, 5, 174, 243, 39, 199,
+                130, 145, 0, 0, 0, 25, 0, 0, 0, 99, 218, 117, 141, 230, 100, 69, 100, 173, 197,
+                244, 185, 59, 232, 172, 205, 170, 0, 0, 0, 15, 0, 0, 0, 251, 182, 237, 116, 231,
+                62, 68, 171, 136, 147, 66, 82, 121, 45, 115, 122, 185, 0, 0, 0, 6, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+                5, 5, 5, 7, 7, 7, 7, 7, 7,
+            ];
+
+            let cert_bytes_ptr: *mut CertTableEntry =
+                cert_bytes.as_mut_ptr() as *mut CertTableEntry;
+
+            let actual: Vec<UAPI::CertTableEntry> =
+                unsafe { CertTableEntry::parse_table(cert_bytes_ptr).unwrap() };
+
+            let expected: Vec<UAPI::CertTableEntry> = build_vec_uapi_cert_table();
+
+            assert_eq!(
+                expected, actual,
+                "Invalid certificate offset encountered..."
+            );
+        }
+    }
 }

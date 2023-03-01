@@ -2,6 +2,8 @@
 
 use std::fmt::Display;
 
+use crate::error::*;
+
 use crate::{certs::ecdsa::Signature, firmware::guest::types::SnpDerivedKey, util::hexdump};
 
 use bitfield::bitfield;
@@ -14,6 +16,7 @@ use serde_big_array::BigArray;
 use static_assertions::const_assert;
 
 pub(crate) const _4K_PAGE: usize = 4096;
+const MAX_VMPL: u32 = 3;
 
 #[repr(C)]
 pub struct SnpDerivedKeyReq {
@@ -113,7 +116,7 @@ impl SnpExtReportReq {
 
 /// Information provided by the guest owner for requesting an attestation
 /// report from the AMD Secure Processor.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 #[repr(C)]
 pub struct SnpReportReq {
     /// Guest-provided data to be included int the attestation report
@@ -144,12 +147,16 @@ impl SnpReportReq {
     ///
     /// * `report_data` - (Optional) 64 bytes of unique data to be included in the generated report.
     /// * `vmpl` - The VMPL level the guest VM is running on.
-    pub fn new(report_data: Option<[u8; 64]>, vmpl: u32) -> Self {
-        Self {
+    pub fn new(report_data: Option<[u8; 64]>, vmpl: u32) -> Result<Self, VmplError> {
+        if vmpl > MAX_VMPL {
+            return Err(VmplError);
+        }
+
+        Ok(Self {
             report_data: report_data.unwrap_or([0; 64]),
             vmpl,
             _reserved: Default::default(),
-        }
+        })
     }
 }
 
@@ -551,5 +558,50 @@ Platform Info ({}):
             self.tsme_enabled(),
             self.smt_enabled()
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    mod snp_report_req {
+        use crate::firmware::linux::guest::types::SnpReportReq;
+        #[test]
+        pub fn test_new() {
+            let report_data: [u8; 64] = [
+                65, 77, 68, 32, 105, 115, 32, 101, 120, 116, 114, 101, 109, 101, 108, 121, 32, 97,
+                119, 101, 115, 111, 109, 101, 33, 32, 87, 101, 32, 109, 97, 107, 101, 32, 116, 104,
+                101, 32, 98, 101, 115, 116, 32, 67, 80, 85, 115, 33, 32, 65, 77, 68, 32, 82, 111,
+                99, 107, 115, 33, 33, 33, 33, 33, 33,
+            ];
+            let expected: SnpReportReq = SnpReportReq {
+                report_data,
+                vmpl: 0,
+                _reserved: [0; 28],
+            };
+
+            let actual: SnpReportReq = SnpReportReq::new(Some(report_data), 0).unwrap();
+
+            assert_eq!(expected, actual);
+        }
+
+        #[test]
+        #[should_panic]
+        pub fn test_new_error() {
+            let report_data: [u8; 64] = [
+                65, 77, 68, 32, 105, 115, 32, 101, 120, 116, 114, 101, 109, 101, 108, 121, 32, 97,
+                119, 101, 115, 111, 109, 101, 33, 32, 87, 101, 32, 109, 97, 107, 101, 32, 116, 104,
+                101, 32, 98, 101, 115, 116, 32, 67, 80, 85, 115, 33, 32, 65, 77, 68, 32, 82, 111,
+                99, 107, 115, 33, 33, 33, 33, 33, 33,
+            ];
+            let expected: SnpReportReq = SnpReportReq {
+                report_data,
+                vmpl: 7,
+                _reserved: [0; 28],
+            };
+
+            let actual: SnpReportReq = SnpReportReq::new(Some(report_data), 0).unwrap();
+
+            assert_eq!(expected, actual);
+        }
     }
 }

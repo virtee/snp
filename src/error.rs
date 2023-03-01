@@ -8,6 +8,20 @@ use std::{
 };
 use uuid;
 
+#[derive(Debug)]
+pub struct VmplError;
+
+impl Display for VmplError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Invalid Virtual Machine Permisison Level (VMPL) specificed!"
+        )
+    }
+}
+
+impl error::Error for VmplError {}
+
 /// An error representingthe upper 32 bits of a SW_EXITINFO2 field set by the VMM.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum VmmError {
@@ -411,20 +425,22 @@ impl std::fmt::Display for Error {
                 "SEV firmware has run out of required resources to carry out command"
             }
             Error::SecureDataInvalid => "SEV platform observed a failed integrity check",
-            Error::InvalidPageSize => todo!(),
-            Error::InvalidPageState => todo!(),
-            Error::InvalidMdataEntry => todo!(),
-            Error::InvalidPageOwner => todo!(),
-            Error::AEADOFlow => todo!(),
-            Error::RbModeExited => todo!(),
-            Error::RMPInitRequired => todo!(),
-            Error::BadSvn => todo!(),
-            Error::BadVersion => todo!(),
-            Error::ShutdownRequired => todo!(),
-            Error::UpdateFailed => todo!(),
-            Error::RestoreRequired => todo!(),
-            Error::RMPInitFailed => todo!(),
-            Error::InvalidKey => todo!(),
+            Error::InvalidPageSize => "The RMP page size is incorrect.",
+            Error::InvalidPageState => "The RMP page state is incorrect.",
+            Error::InvalidMdataEntry => "The metadata entry is invalid.",
+            Error::InvalidPageOwner => "The page ownership is incorrect",
+            Error::AEADOFlow => "The AEAD algorithm would have overflowed.",
+            Error::RbModeExited => "A Mailbox mode command was sent while the SEV FW was in Ring Buffer \
+                                    mode. Ring Buffer mode has been exited; the Mailbox mode command has \
+                                    been ignored. Retry is recommended.",
+            Error::RMPInitRequired => "The RMP must be reinitialized.",
+            Error::BadSvn => "SVN of provided image is lower than the committed SVN",
+            Error::BadVersion => "Firmware version anti-rollback.",
+            Error::ShutdownRequired => "An invocation of SNP_SHUTDOWN is required to complete this action.",
+            Error::UpdateFailed => "Update of the firmware internal state or a guest context page has failed.",
+            Error::RestoreRequired => "Installation of the committed firmware image required.",
+            Error::RMPInitFailed => "The RMP initialization failed.",
+            Error::InvalidKey => "The key requested is invalid, not present, or not allowed",
         };
         write!(f, "{err_description}")
     }

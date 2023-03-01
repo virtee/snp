@@ -4,7 +4,7 @@ use bitflags;
 #[cfg(feature = "use-serde")]
 use serde::{Deserialize, Serialize};
 
-pub(crate) use crate::{error::SnpCertError, firmware::linux::guest::types::_4K_PAGE};
+pub(crate) use crate::firmware::linux::guest::types::_4K_PAGE;
 
 pub(crate) use crate::firmware::linux::host as FFI;
 
@@ -50,43 +50,15 @@ pub enum SnpCertType {
     VCEK,
 
     /// Other (Specify GUID)
-    OTHER(String),
+    OTHER(uuid::Uuid),
 
     /// Empty or closing entry for the CertTable
     Empty,
 }
 
-impl From<&str> for SnpCertType {
-    /// Create a certificate from the specified GUID. Any unexpected matches
-    /// produce an [`SnpCertType::OTHER`](self::SnpCertType::OTHER) type from the guid provided.
-    fn from(value: &str) -> Self {
-        match value {
-            "c0b406a4-a803-4952-9743-3fb6014cd0ae" => SnpCertType::ARK,
-            "4ab7b379-bbac-4fe4-a02f-05aef327c782" => SnpCertType::ASK,
-            "63da758d-e664-4564-adc5-f4b93be8accd" => SnpCertType::VCEK,
-            "00000000-0000-0000-0000-000000000000" => SnpCertType::Empty,
-            guid => SnpCertType::OTHER(guid.to_string()),
-        }
-    }
-}
-
-impl From<SnpCertType> for String {
-    /// Find the String value of the GUID for a [`SnpCertType`](self::SnpCertType).
-    fn from(value: SnpCertType) -> Self {
-        match value {
-            SnpCertType::ARK => "c0b406a4-a803-4952-9743-3fb6014cd0ae".to_string(),
-            SnpCertType::ASK => "4ab7b379-bbac-4fe4-a02f-05aef327c782".to_string(),
-            SnpCertType::VCEK => "63da758d-e664-4564-adc5-f4b93be8accd".to_string(),
-            SnpCertType::Empty => "00000000-0000-0000-0000-000000000000".to_string(),
-            SnpCertType::OTHER(guid) => guid,
-        }
-    }
-}
-
-impl From<&SnpCertType> for String {
-    /// Find the String value of the GUID for a [`SnpCertType`](self::SnpCertType).
-    fn from(value: &SnpCertType) -> Self {
-        match value {
+impl ToString for SnpCertType {
+    fn to_string(&self) -> String {
+        match self {
             SnpCertType::ARK => "c0b406a4-a803-4952-9743-3fb6014cd0ae".to_string(),
             SnpCertType::ASK => "4ab7b379-bbac-4fe4-a02f-05aef327c782".to_string(),
             SnpCertType::VCEK => "63da758d-e664-4564-adc5-f4b93be8accd".to_string(),
@@ -96,23 +68,30 @@ impl From<&SnpCertType> for String {
     }
 }
 
-impl ToString for SnpCertType {
-    fn to_string(&self) -> String {
-        self.into()
-    }
-}
-
 impl TryFrom<SnpCertType> for uuid::Uuid {
     type Error = uuid::Error;
-
     fn try_from(value: SnpCertType) -> Result<Self, Self::Error> {
         match value {
             SnpCertType::ARK => uuid::Uuid::parse_str(&SnpCertType::ARK.to_string()),
             SnpCertType::ASK => uuid::Uuid::parse_str(&SnpCertType::ASK.to_string()),
             SnpCertType::VCEK => uuid::Uuid::parse_str(&SnpCertType::VCEK.to_string()),
             SnpCertType::Empty => uuid::Uuid::parse_str(&SnpCertType::Empty.to_string()),
-            SnpCertType::OTHER(guid) => uuid::Uuid::parse_str(&guid),
+            SnpCertType::OTHER(guid) => Ok(guid),
         }
+    }
+}
+
+impl TryFrom<&uuid::Uuid> for SnpCertType {
+    type Error = uuid::Error;
+
+    fn try_from(value: &uuid::Uuid) -> Result<Self, Self::Error> {
+        Ok(match value.to_string().as_str() {
+            "c0b406a4-a803-4952-9743-3fb6014cd0ae" => SnpCertType::ARK,
+            "4ab7b379-bbac-4fe4-a02f-05aef327c782" => SnpCertType::ASK,
+            "63da758d-e664-4564-adc5-f4b93be8accd" => SnpCertType::VCEK,
+            "00000000-0000-0000-0000-000000000000" => SnpCertType::Empty,
+            _ => SnpCertType::OTHER(*value),
+        })
     }
 }
 
@@ -131,7 +110,7 @@ pub struct CertTableEntry {
 impl CertTableEntry {
     /// Façade for retreiving the GUID for the Entry.
     pub fn guid_string(&self) -> String {
-        self.cert_type.clone().into()
+        self.cert_type.clone().to_string()
     }
 
     /// Get an immutable reference to the data stored in the entry.
@@ -140,11 +119,12 @@ impl CertTableEntry {
     }
 
     /// Generates a certificate from the str GUID and data provided.
-    pub fn from_guid(guid: &str, data: Vec<u8>) -> Self {
-        Self {
-            cert_type: guid.into(),
-            data,
-        }
+    pub fn from_guid(guid: &uuid::Uuid, data: Vec<u8>) -> Result<Self, uuid::Error> {
+        let cert_type: SnpCertType = match guid.try_into() {
+            Ok(guid) => guid,
+            Err(error) => return Err(error),
+        };
+        Ok(Self { cert_type, data })
     }
 
     /// Generates a certificate from the SnpCertType and data provided.
@@ -270,16 +250,37 @@ fn round_to_whole_pages(size: usize) -> usize {
 }
 
 impl SnpExtConfig {
-    /// Used to update the PSP with the cerificates provided.
-    pub fn update_certs_only(certificates: Vec<CertTableEntry>) -> Result<Self, SnpCertError> {
+    /// Used to only update the AMD Secure Processor certificates with the cerificates provided.
+    pub fn update_certs_only(certificates: Vec<CertTableEntry>) -> Self {
         let certs_length: usize = certificates.iter().map(|entry| entry.data().len()).sum();
         let certs_len: u32 = round_to_whole_pages(certs_length) as u32;
 
-        Ok(Self {
+        Self {
             config: None,
             certs: Some(certificates),
             certs_len,
-        })
+        }
+    }
+
+    /// Used to only update the AMD Secure Processor configuration with the configuration provided.
+    pub fn update_config_only(config: SnpConfig) -> Self {
+        Self {
+            config: Some(config),
+            certs: None,
+            certs_len: 0,
+        }
+    }
+
+    /// Creates a new instance of an SnpExtConfig.
+    pub fn new(config: SnpConfig, certificates: Vec<CertTableEntry>) -> Self {
+        let certs_length: usize = certificates.iter().map(|entry| entry.data().len()).sum();
+        let certs_len: u32 = round_to_whole_pages(certs_length) as u32;
+
+        Self {
+            config: Some(config),
+            certs: Some(certificates),
+            certs_len,
+        }
     }
 }
 
