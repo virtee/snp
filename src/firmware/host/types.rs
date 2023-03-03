@@ -110,7 +110,7 @@ pub struct CertTableEntry {
 impl CertTableEntry {
     /// Façade for retreiving the GUID for the Entry.
     pub fn guid_string(&self) -> String {
-        self.cert_type.clone().to_string()
+        self.cert_type.to_string()
     }
 
     /// Get an immutable reference to the data stored in the entry.
@@ -250,7 +250,7 @@ fn round_to_whole_pages(size: usize) -> usize {
 }
 
 impl SnpExtConfig {
-    /// Used to only update the AMD Secure Processor certificates with the cerificates provided.
+    /// Used to only update the AMD Secure Processor certificates with the certificates provided.
     pub fn update_certs_only(certificates: Vec<CertTableEntry>) -> Self {
         let certs_length: usize = certificates.iter().map(|entry| entry.data().len()).sum();
         let certs_len: u32 = round_to_whole_pages(certs_length) as u32;

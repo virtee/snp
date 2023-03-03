@@ -10,7 +10,7 @@ use bitfield::bitfield;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde-big-array")]
+#[cfg(feature = "serde")]
 use serde_big_array::BigArray;
 
 use static_assertions::const_assert;
@@ -265,19 +265,19 @@ pub struct AttestationReport {
     /// See [`AttestationReport::_author_key_en`].
     _author_key_en: u32,
     _reserved_0: u32,
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     /// Guest-provided 512 Bits of Data
     pub report_data: [u8; 64],
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     /// The measurement calculated at launch.
     pub measurement: [u8; 48],
     /// Data provided by the hypervisor at launch.
     pub host_data: [u8; 32],
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     /// SHA-384 digest of the ID public key that signed the ID block provided
     /// in SNP_LANUNCH_FINISH.
     pub id_key_digest: [u8; 48],
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     /// SHA-384 digest of the Author public key that certified the ID key,
     /// if provided in SNP_LAUNCH_FINSIH. Zeroes if AUTHOR_KEY_EN is 1.
     pub author_key_digest: [u8; 48],
@@ -288,7 +288,7 @@ pub struct AttestationReport {
     /// Reported TCB version used to derive the VCEK that signed this report.
     pub reported_tcb: SnpTcbVersion,
     _reserved_1: [u8; 24],
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     /// If MaskChipId is set to 0, Identifier unique to the chip.
     /// Otherwise set to 0h.
     pub chip_id: [u8; 64],
@@ -310,7 +310,7 @@ pub struct AttestationReport {
     _reserved_3: u8,
     /// The CurrentTcb at the time the guest was launched or imported.
     pub launch_tcb: SnpTcbVersion,
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     _reserved_4: [u8; 168],
     /// Signature of bytes 0 to 0x29F inclusive of this report.
     /// The format of the signature is found within Signature.

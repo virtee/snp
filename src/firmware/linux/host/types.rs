@@ -242,7 +242,7 @@ impl CertTableEntry {
             let cert_end: *mut u8 = cert_addr.add(entry.length as usize) as *mut u8;
 
             // Gather the certificate bytes.
-            while cert_addr.ne(&cert_end) {
+            while cert_addr != cert_end {
                 cert_bytes.push(*cert_addr);
                 cert_addr = cert_addr.add(1usize);
             }

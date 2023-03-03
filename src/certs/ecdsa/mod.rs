@@ -6,7 +6,7 @@ use crate::certs::{AsLeBytes, FromLe};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "serde-big-array")]
+#[cfg(feature = "serde")]
 use serde_big_array::BigArray;
 
 #[cfg(feature = "openssl")]
@@ -23,11 +23,11 @@ const R_S_SIZE: usize = SIG_PIECE_SIZE * 2usize;
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 
 pub struct Signature {
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     r: [u8; 72],
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     s: [u8; 72],
-    #[cfg_attr(feature = "serde-big-array", serde(with = "BigArray"))]
+    #[cfg_attr(feature = "serde", serde(with = "BigArray"))]
     _reserved: [u8; 512 - R_S_SIZE],
 }
 

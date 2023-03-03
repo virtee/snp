@@ -22,14 +22,11 @@ pub fn parse_table(data: RawData) -> Result<Vec<CertTableEntry>, uuid::Error> {
         RawData::Pointer(pointer) => unsafe {
             FFI::types::CertTableEntry::parse_table(pointer as *mut FFI::types::CertTableEntry)
         },
-        RawData::Vector(vector) => {
-            let mut copied_data = vector;
-            unsafe {
-                FFI::types::CertTableEntry::parse_table(
-                    copied_data.as_mut_ptr() as *mut FFI::types::CertTableEntry
-                )
-            }
-        }
+        RawData::Vector(vector) => unsafe {
+            FFI::types::CertTableEntry::parse_table(
+                vector.as_ptr() as *mut FFI::types::CertTableEntry
+            )
+        },
     }
 }
 
@@ -59,20 +56,21 @@ impl Firmware {
             certs_address: raw_buf.as_mut_ptr() as *mut CertTableEntry as u64,
             certs_len: _4K_PAGE as u32,
         };
-        if let Err(error) =
-            SNP_GET_EXT_CONFIG.ioctl(&mut self.0, &mut Command::from_mut(&mut config))
-        {
-            // If the error occurred because the buffer was to small, it will have changed the
-            // buffer. If it has, we will attempt to resize it.
-            if config.certs_len > _4K_PAGE as u32 {
-                raw_buf = vec![0; config.certs_len as usize];
-                config.certs_address = raw_buf.as_mut_ptr() as *mut CertTableEntry as u64;
 
-                SNP_GET_EXT_CONFIG.ioctl(&mut self.0, &mut Command::from_mut(&mut config))?;
-            } else {
-                return Err(error.into());
-            }
-        }
+        SNP_GET_EXT_CONFIG
+            .ioctl(&mut self.0, &mut Command::from_mut(&mut config))
+            .or_else(|err| {
+                // If the error occurred because the buffer was to small, it will have changed
+                // the buffer. If it has, we will attempt to resize it.
+                if config.certs_len <= _4K_PAGE as u32 {
+                    return Err(err);
+                }
+
+                raw_buf = vec![0; config.certs_len as usize];
+                config.certs_address = raw_buf.as_ptr() as *const CertTableEntry as u64;
+                SNP_GET_EXT_CONFIG.ioctl(&mut self.0, &mut Command::from_mut(&mut config))
+            })?;
+
         config.try_into().map_err(|op: uuid::Error| op.into())
     }
 

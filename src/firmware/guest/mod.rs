@@ -153,16 +153,13 @@ impl Firmware {
             return Err(UserApiError::FirmwareError(Error::InvalidConfig));
         }
 
-        let mut certificates: Vec<CertTableEntry> = vec![];
+        let certificates: Vec<CertTableEntry>;
 
         unsafe {
-            if let Some(linux_cert_table) =
-                (ext_report_request.certs_address as *mut HostFFI::types::CertTableEntry).as_mut()
-            {
-                certificates = HostFFI::types::CertTableEntry::parse_table(
-                    linux_cert_table as &mut HostFFI::types::CertTableEntry,
-                )?;
-            }
+            let entries = (ext_report_request.certs_address as *mut HostFFI::types::CertTableEntry)
+                .as_mut()
+                .ok_or(SnpCertError::EmptyCertBuffer)?;
+            certificates = HostFFI::types::CertTableEntry::parse_table(entries)?;
         }
 
         // Return both the Attestation Report, as well as the Cert Table.

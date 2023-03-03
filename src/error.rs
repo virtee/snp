@@ -236,6 +236,9 @@ pub enum SnpCertError {
     /// Invalid Buffer Size
     BufferOverflow,
 
+    /// No certificates were set by the Host.
+    EmptyCertBuffer,
+
     /// Unknown Error.
     UnknownError,
 }
@@ -252,6 +255,12 @@ impl std::fmt::Display for SnpCertError {
             }
             SnpCertError::UnknownError => {
                 write!(f, "Unknown Error encountered within the certificate chain.")
+            }
+            SnpCertError::EmptyCertBuffer => {
+                write!(
+                    f,
+                    "No certificates were provided by the host, please contact your CSP."
+                )
             }
         }
     }
