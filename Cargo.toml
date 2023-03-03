@@ -30,3 +30,6 @@ static_assertions = { version = "^1.1" }
 openssl = { version = "^0.10", optional = true }
 iocuddle = { version = "^0.1" }
 uuid = { version = "^1.2" }
+
+[features]
+serde = ["dep:serde", "dep:serde-big-array", "uuid/serde"]

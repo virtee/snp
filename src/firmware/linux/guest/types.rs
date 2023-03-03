@@ -8,9 +8,9 @@ use crate::{certs::ecdsa::Signature, firmware::guest::types::SnpDerivedKey, util
 
 use bitfield::bitfield;
 
-#[cfg(feature = "use-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "use-serde")]
+#[cfg(feature = "serde-big-array")]
 use serde_big_array::BigArray;
 
 use static_assertions::const_assert;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use bitflags;
-#[cfg(feature = "use-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 pub(crate) use crate::firmware::linux::guest::types::_4K_PAGE;
