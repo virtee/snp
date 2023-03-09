@@ -471,6 +471,19 @@ impl From<io::Error> for Error {
     }
 }
 
+impl error::Error for Indeterminate<Error> {}
+
+impl Display for Indeterminate<Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let err_description = match self {
+            Indeterminate::Known(error) => format!("Known Error: {error}"),
+            Indeterminate::Unknown => "Unknown Error Encountered".to_string(),
+        };
+
+        write!(f, "{err_description}")
+    }
+}
+
 impl From<io::Error> for Indeterminate<Error> {
     #[inline]
     fn from(error: io::Error) -> Indeterminate<Error> {
