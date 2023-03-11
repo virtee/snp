@@ -1,14 +1,11 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+// SPDX-License-Identifier: Apache-2.0
+#![allow(dead_code)]
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+//!
+//! Full explanation of how to use the crate will go here...
+//!
+mod util;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod certs;
+pub mod error;
+pub mod firmware;

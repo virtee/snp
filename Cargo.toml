@@ -1,8 +1,35 @@
 [package]
 name = "snp"
 version = "0.1.0"
+authors = ["The VirTEE Project Developers"]
+license = "Apache-2.0"
 edition = "2021"
-
+homepage = "https://github.com/virtee/snp"
+repository = "https://github.com/virtee/snp"
+description = "A library for interacting with the AMD Secure Processor on a 3rd Generation (or newer) AMD EPYC processor"
+readme = "README.md"
+keywords = ["amd", "sev", "snp", "milan", "genoa"]
+categories = ["os", "os::linux-apis", "parsing", "network-programming", "hardware-support"]
+exclude = [ ".gitignore", ".github/*" ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[badges]
+# See https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section
+github = { repository = "virtee/snp", workflow = "test" }
+#github = { repository = "virtee/snp", workflow = "lint" }
+maintenance = { status = "actively-developed" }
+is-it-maintained-issue-resolution = { repository = "virtee/snp" }
+is-it-maintained-open-issues = { repository = "virtee/snp" }
+
 [dependencies]
+bitfield = { version="^0.13" }
+bitflags = { version="^1.2" }
+serde = { version = "^1.0", features = ["derive"], optional = true}
+serde-big-array = { version = "^0.4", optional = true}
+static_assertions = { version = "^1.1" }
+openssl = { version = "^0.10", optional = true }
+iocuddle = { version = "^0.1" }
+uuid = { version = "^1.2" }
+
+[features]
+serde = ["dep:serde", "dep:serde-big-array", "uuid/serde"]
